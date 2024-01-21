@@ -41,6 +41,8 @@ void * brealloc(void *ptr, size_t size)
 	if (oldsize == size) return ptr;
 
 	size_t m = size / blocksize + (size % blocksize == 0);
+	if (m == n) return ptr;
+
 	*s = m;
 	void **blocks = (void **)(s+2);
 
