@@ -24,18 +24,18 @@ void test_lmalloc()
 
 	//printf("%p %ld %ld \n", lastblock, lastblock_idx, blocksize);
 
-	printf("%p\n",                                             s[3]                           );
-	printf("%p\n",                          *(void **)((void*)(s[3]) + 100)                   );
-	printf("%p\n",             *((void **)((*(void **)((void*)(s[3]) + 100)) + 100))          );
-	printf("%p\n", *((void **)(*((void **)((*(void **)((void*)(s[3]) + 100)) + 100)) + 100))  );
+	//printf("%p\n",                                             s[3]                           );
+	//printf("%p\n",                          *(void **)((void*)(s[3]) + 100)                   );
+	//printf("%p\n",             *((void **)((*(void **)((void*)(s[3]) + 100)) + 100))          );
+	//printf("%p\n", *((void **)(*((void **)((*(void **)((void*)(s[3]) + 100)) + 100)) + 100))  );
 
 	for (int i = 0; i < m; i++) lset(a, i, i);
 	//for (int i = 0; i < m; i++) printf("%d:\t%d\n", i, lget(a, i));
 
 	m = 30;
 	a = lrealloc(a, m * sizeof(int));
-	printf("%p\n",                                             s[3]                           );
-	printf("%p\n",                          *(void **)((void*)(s[3]) + 100)                   );
+	//printf("%p\n",                                             s[3]                           );
+	//printf("%p\n",                          *(void **)((void*)(s[3]) + 100)                   );
 
 	for (int i = 0; i < m; i++) lset(a, i, 2*i);
 	for (int i = 0; i < m; i++) printf("%d:\t%d\n", i, lget(a, i));

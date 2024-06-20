@@ -82,7 +82,7 @@ void *lmalloc(size_t size, size_t blocksize)
 
 	size_t n = size / blocksize + (size % blocksize != 0);
 	void *p = ptr + 3;
-	for (int i = 0; i < n; i++) {
+	for (size_t i = 0; i < n; i++) {
 		void *mem;
 		mem = malloc(len);
 		*((void **)p) = mem;
@@ -96,16 +96,17 @@ void *lmalloc(size_t size, size_t blocksize)
 
 void *lrealloc(void *ptr, size_t size)
 {
+	// TODO: if (ptr == NULL)... fail
 	size_t *s = (size_t *)ptr;
 	// last accessed block
-	void *lastblock = (void *)s[0]; // Not 100% clean, because requires sizeof(size_t) == sizeof(void **), is this guaranteed?
+	void *lastblock = (void *)s[0]; // Not 100% clean? because requires sizeof(size_t) == sizeof(void **), is this guaranteed?
 	size_t lastblock_idx = s[1];
 	size_t blocksize = s[2];
 	void *p;
-	int idx;
+	size_t idx;
 
 	// Check if new block(s) need to be allocated
-	size_t required_blocks = size / blocksize + (size % blocksize != 0) - 1;
+	size_t required_blocks = size / blocksize + (size % blocksize > 0) - 1; // required blocks minus one, i.e. index of the last block
 
 	// Advance to required_blocks
 	if (lastblock == NULL || required_blocks < lastblock_idx) {
@@ -126,28 +127,25 @@ void *lrealloc(void *ptr, size_t size)
 	s[0] = (size_t) p;
 	s[1] = idx;
 
-	p += blocksize;
-
 	// Free blocks if new size is smaller
-	void *pp = p;
-	while (*(void **)pp != NULL) {
-		printf("%p %p\n", p, pp);
-		void *pf;
-		pf = *(void **)pp;
-		pp = pf + blocksize;
+	void *r = *(void **)(p + blocksize);
+	while (r != NULL) {
+		void *pf = r;
+		r += blocksize;
+		r = *(void **)r;
 		free(pf);
 	}
 
 	// Allocate new blocks
-	for (int i = idx; i < required_blocks; i++) {
-		void *mem;
-		mem = malloc(blocksize+sizeof(void *));
+	for (size_t i = idx; i < required_blocks; i++) {
+		p += blocksize;
+		void *mem = malloc(blocksize+sizeof(void *));
 		*((void **)p) = mem;
-		p = mem + blocksize;
+		p = mem;
 	}
 
 	// Seal last block off
-	*(void **)p = NULL;
+	*(void **)(p + blocksize) = NULL;
 
 	return ptr;
 }
@@ -155,23 +153,24 @@ void *lrealloc(void *ptr, size_t size)
 void *lptr(void *ptr, size_t stride, size_t i)
 {
 	size_t *s = (size_t *)ptr;
-	// last accessed block
-	void *lastblock = (void *)s[0];
-	size_t lastblock_idx = s[1];
 	size_t blocksize = s[2];
 
 	// Compute block & index in block
 	i *= stride;
-	int block = i / blocksize;
-	int inner = i % blocksize;
+	size_t block = i / blocksize;
+	size_t inner = i % blocksize;
 
 	// Get convenient pointer to block
-	void *p;
-	if (lastblock == NULL || lastblock_idx > block) p = (void *)s[3];
-	else                                            p = lastblock;
+	// last accessed block
+	void *p = (void *)s[0];
+	size_t idx = s[1];
+	if (p == NULL || idx > block) {
+		idx = 0;
+		p = (void *)s[3];
+	}
 
 	// Advance to block
-	for (; lastblock_idx < block; lastblock_idx++) p = *((void **)(p + blocksize));
+	for (; idx < block; idx++) p = *((void **)(p + blocksize));
 
 	return p + inner;
 }
